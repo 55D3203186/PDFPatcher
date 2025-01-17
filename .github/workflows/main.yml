@@ -1,0 +1,23 @@
+name: CI
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - uses: microsoft/setup-msbuild@v2
+
+    - run: nuget restore ${{env.SOLUTION_FILE_PATH}}
+
+    - name: build
+      run: msbuild /m App\PDFPatcher.csproj /p:Configuration=Release /p:Platform=x64
+
+    - uses: actions/upload-artifact@v4
+      with:
+          name: PDFPatcher
+          path: |
+            bin/*
