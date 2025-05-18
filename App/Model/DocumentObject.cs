@@ -205,6 +205,14 @@ namespace PDFPatcher.Model
 			return false;
 		}
 
+		DocumentObject GetPageObject() {
+			var p = this;
+			while (p?.Type != PdfObjectType.Page) {
+				p = p.Parent;
+			}
+			return p;
+		}
+
 		private static string GetItemValueText(PdfObject po, PdfObject eo) {
 			if (po == null && eo == null) {
 				goto Exit;
@@ -376,7 +384,10 @@ namespace PDFPatcher.Model
 						}
 						else if (Parent.Type == PdfObjectType.Form) {
 							var form = PdfReader.GetPdfObjectRelease(Parent.Value) as PRStream;
-							cp.ProcessContent(PdfReader.GetStreamBytes(form), form.GetAsDict(PdfName.RESOURCES));
+							cp.ProcessContent(PdfReader.GetStreamBytes(form),
+								new CompositePdfDictionary(form.GetAsDict(PdfName.RESOURCES),
+									pdf.GetPageN((int)GetPageObject().ExtensiveObject).GetAsDict(PdfName.RESOURCES))
+								);
 						}
 						foreach (var item in cp.Commands) {
 							PopulatePageCommand(item);
@@ -417,7 +428,7 @@ namespace PDFPatcher.Model
 			};
 			if (item.Type == PdfPageCommandType.Text) {
 				var t = item as TextCommand;
-				o.FriendlyValue = t.TextInfo.PdfString.GetOriginalBytes().ToHexBinString();
+				o.FriendlyValue = t.TextInfo.PdfString.GetFriendlyValue();
 				o.Description = t.TextInfo.Text;
 				if (item.Name.ToString() == "TJ") {
 					var a = item.Operands[0] as PdfArray;
@@ -428,7 +439,7 @@ namespace PDFPatcher.Model
 						foreach (var ti in a.ArrayList) {
 							var d = new DocumentObject(OwnerDocument, o, (++i).ToText(), ti);
 							if (ti.Type == PdfObject.STRING) {
-								d.FriendlyValue = ((PdfString)ti).GetOriginalBytes().ToHexBinString();
+								d.FriendlyValue = ((PdfString)ti).GetFriendlyValue();
 								d.Description = pt.DecodedTexts[i - 1];
 							}
 							o._Children.Add(d);
@@ -491,5 +502,43 @@ namespace PDFPatcher.Model
 			}
 		}
 
+		sealed class CompositePdfDictionary(PdfDictionary primary, PdfDictionary auxiliary) : PdfDictionary
+		{
+			public new IEnumerable<PdfName> Keys => GetKeyValues().Select(i => i.Key);
+			public override int Size => (primary?.Size ?? 0) + (auxiliary?.Size ?? 0);
+			public override PdfObject GetDirectObject(PdfName key) {
+				var po = primary?.GetDirectObject(key);
+				if (po is PdfDictionary pd) {
+					if (auxiliary != null) {
+						var ao = auxiliary.GetDirectObject(key);
+						return ao is PdfDictionary ad ? new CompositePdfDictionary(pd, ad) : pd;
+					}
+					else {
+						return pd;
+					}
+				}
+				return primary?.GetDirectObject(key) ?? auxiliary?.GetDirectObject(key);
+			}
+			public override bool Contains(PdfName key) {
+				return primary?.Contains(key) ?? auxiliary?.Contains(key) ?? false;
+			}
+			public new IEnumerator<KeyValuePair<PdfName, PdfObject>> GetEnumerator() {
+				return GetKeyValues().GetEnumerator();
+			}
+			public IEnumerable<KeyValuePair<PdfName, PdfObject>> GetKeyValues() {
+				if (primary != null) {
+					foreach (var item in primary) {
+						yield return new KeyValuePair<PdfName, PdfObject>(item.Key, item.Value);
+					}
+				}
+				if (auxiliary != null) {
+					foreach (var item in auxiliary) {
+						if (primary?.Contains(item.Key) == false) {
+							yield return new KeyValuePair<PdfName, PdfObject>(item.Key, item.Value);
+						}
+					}
+				}
+			}
+		}
 	}
 }

@@ -79,10 +79,13 @@ namespace PDFPatcher
 		internal const string EditorBookmarkPageNumberIncrement = "_IncrementPageNumber";
 		internal const string EditorBookmarkPageNumberDecrement = "_DecrementPageNumber";
 		internal const string EditorBookmarkPageNumberShift = "_ShiftMultiPageNumber";
+		internal const string EditorBookmarkPageNumberShiftTakeFollowing = "_ShiftMultiPageNumberTakeFollowing";
 		internal const string EditorBookmarkSetCurrentCoordinates = "_SetCurrentCoordinates";
 		internal const string EditorOcrPage = "_OcrPage";
 		internal const string EditorPageProperties = "_PageProperties";
 		internal const string EditorSavePageImage = "_SavePageImage";
+		internal const string EditorViewerScrollToBookmark = "_ViewerScrollToBookmark";
+		internal const string EditorInsertPageLabel = "_InsertPageLabel";
 		#endregion
 		internal static readonly string[] TopMenuItems = { File, Tools, Selection };
 		internal static readonly string[] CommonSelectionCommands = { SelectAllItems, SelectNone, InvertSelection };

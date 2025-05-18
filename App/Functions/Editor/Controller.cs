@@ -30,6 +30,10 @@ namespace PDFPatcher.Functions.Editor
 		}
 		public bool IsBusy => _loader?.IsBusy == true;
 
+		public void ExecuteCommand(string command, params string[] parameters) {
+			EditorCommands.Execute(command, this, parameters);
+		}
+
 		internal IEnumerable<XmlNode> ProcessBookmarks(IPdfInfoXmlProcessor processor) {
 			return ProcessBookmarks(View.AffectsDescendantBookmarks, true, processor);
 		}
@@ -405,50 +409,6 @@ namespace PDFPatcher.Functions.Editor
 			return new EditModel.Region(pp, t, ts);
 		}
 
-		internal void LabelAtPage(Editor.PagePosition position) {
-			if (position.Page == 0) {
-				return;
-			}
-			var l = Model.PageLabels;
-			if (l == null) {
-				return;
-			}
-			var v = View.Viewer;
-			var f = new InsertPageLabelForm {
-				Location = Cursor.Position.Transpose(-16, -16),
-				PageNumber = position.Page
-			};
-			var pl = l.Find(position.Page);
-			if (pl.IsEmpty == false) {
-				f.SetValues(pl);
-			}
-			f.FormClosed += InsertPageLabelForm_Closed;
-			f.Show();
-		}
-
-		void InsertPageLabelForm_Closed(object sender, EventArgs e) {
-			var form = sender as InsertPageLabelForm;
-			if (form.DialogResult == DialogResult.Cancel) {
-				return;
-			}
-			var l = Model.PageLabels;
-			if (form.DialogResult == DialogResult.OK) {
-				if (l == null) {
-					return;
-				}
-				l.Add(form.PageLabel);
-			}
-			else if (form.DialogResult == DialogResult.Abort) {
-				Model.PageLabels.Remove(form.PageLabel);
-			}
-			var pl = Model.Document.PageLabelRoot;
-			pl.InnerText = String.Empty;
-			foreach (var item in l) {
-				pl.AppendChild(Model.Document.CreatePageLabel(item));
-			}
-			View.Viewer.Invalidate();
-		}
-
 		internal void InsertBookmark(InsertBookmarkPositionType position = InsertBookmarkPositionType.Undefined) {
 			if (position == InsertBookmarkPositionType.Undefined) {
 				position = (Control.ModifierKeys & Keys.Shift) > 0 ? InsertBookmarkPositionType.BeforeCurrent : InsertBookmarkPositionType.AfterCurrent;
@@ -605,27 +565,29 @@ namespace PDFPatcher.Functions.Editor
 			ts[0] = dest.Title;
 			var ct = dest.OwnerDocument.CreateDocumentFragment();
 			for (int i = 1; i < l; i++) {
-				ts[i] = es[i].GetAttribute(Constants.BookmarkAttributes.Title);
-				if (ts[i].Length > 0) {
-					var c = ts[i][0];
+				ref var title = ref ts[i];
+				var be = es[i];
+				title = be.GetAttribute(Constants.BookmarkAttributes.Title);
+				if (title.Length > 0) {
+					var c = title[0];
 					if (c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z') {
-						ts[i] = " " + ts[i];
+						title = " " + title;
 					}
 				}
-				while (es[i].HasChildNodes) {
-					if (es[i].FirstChild is not XmlElement c) {
+				while (be.HasChildNodes) {
+					if (be.FirstChild is not XmlElement c) {
 						continue;
 					}
 					undo.Add(new AddElementAction(c));
 					ct.AppendChild(c);
 				}
-				if (es[i].ParentNode == p) {
-					undo.Add(new AddElementAction(es[i]));
-					p.RemoveChild(es[i]);
+				if (be.ParentNode == p) {
+					undo.Add(new AddElementAction(be));
+					p.RemoveChild(be);
 				}
-				else /*es[i].ParentNode = es[0]*/ {
-					undo.Add(new AddElementAction(es[i]));
-					dest.RemoveChild(es[i]);
+				else /*be.ParentNode = es[0]*/ {
+					undo.Add(new AddElementAction(be));
+					dest.RemoveChild(be);
 				}
 			}
 			while (ct.HasChildNodes) {

@@ -11,6 +11,7 @@ namespace MuPDF
 
 		public PageLabel this[int index] => _labels[index];
 
+		internal PageLabelCollection() {}
 		internal PageLabelCollection(Document document) {
 			var pl = new List<PageLabel>();
 			var l = document.Trailer.Locate(PdfNames.Root, PdfNames.PageLabels, PdfNames.Nums);
@@ -130,7 +131,7 @@ namespace MuPDF
 		public PageLabel(int pageNumber, int startAt, string prefix, PageLabelStyle numericStyle) {
 			FromPageNumber = pageNumber;
 			StartAt = startAt;
-			Prefix = prefix;
+			Prefix = prefix ?? String.Empty;
 			NumericStyle = numericStyle;
 		}
 
@@ -162,6 +163,7 @@ namespace MuPDF
 	public enum PageLabelStyle : byte
 	{
 		Default = (byte)'-',
+		DigitN = (byte)'D',
 		Digit = (byte)'d',
 		UpperRoman = (byte)'R',
 		LowerRoman = (byte)'r',

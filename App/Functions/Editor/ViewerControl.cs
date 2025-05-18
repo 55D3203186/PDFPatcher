@@ -90,6 +90,9 @@ namespace PDFPatcher.Functions
 		[Browsable(false)]
 		public int LastPage => _DisplayRange.EndValue;
 
+		[Browsable(false)]
+		public PageLabelCollection PageLabels { get => _pageLabels; set => _pageLabels = value; }
+
 		readonly OcrOptions _OcrOptions = new OcrOptions();
 		/// <summary>
 		/// 获取文本识别选项。
@@ -568,7 +571,7 @@ namespace PDFPatcher.Functions
 
 			var r = DrawingRectangle.Empty;
 			do {
-				System.Diagnostics.Debug.Assert(p > 0 && p < _mupdf.PageCount + 1, p.ToString());
+				Debug.Assert(p > 0 && p < _mupdf.PageCount + 1, p.ToString());
 				var pb = _pageBounds[p];
 				var z = GetZoomFactorForPage(pb);
 				var ox = HorizontalFlow ? _pageOffsets[p] : 0;
@@ -1145,15 +1148,15 @@ namespace PDFPatcher.Functions
 			position.Location.Deconstruct(out var px, out var py);
 			if (px != 0) {
 				px -= bound.X0;
-			}
-			else if (h) {
-				op.X -= __pageMargin;
+				if (h && Math.Abs(px) < 0.001f) {
+					op.X -= __pageMargin;
+				}
 			}
 			if (py != 0) {
 				py = bound.Height - (py - bound.Y0);
-			}
-			else if (h == false) {
-				op.Y -= __pageMargin;
+				if (h == false && Math.Abs(py) < 0.001f) {
+					op.Y -= __pageMargin;
+				}
 			}
 			var z = GetZoomFactorForPage(bound);
 			ScrollTo(
