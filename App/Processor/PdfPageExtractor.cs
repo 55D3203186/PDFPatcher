@@ -126,7 +126,7 @@ namespace PDFPatcher.Processor
 				int s = l[i].Key, e = i < l.Count - 1 ? l[i + 1].Key - 1 : n;
 				pdf = PdfHelper.OpenPdfFile(sourceFile, AppContext.LoadPartialPdfFile, false);
 				var tf = FileHelper.CombinePath(dn, String.Concat(
-					fn, Path.DirectorySeparatorChar,
+					fn, Path.DirectorySeparatorChar.ToString(),
 					options.NumberFileNames ? (i + 1).ToText() + " - " : String.Empty,
 					l[i].Value,
 					Ext.Pdf));
@@ -197,8 +197,8 @@ namespace PDFPatcher.Processor
 					pdf.Trailer.Remove(PdfName.INFO);
 					pdf.Catalog.Remove(PdfName.METADATA);
 				}
-				else if (pdf.Catalog == pdf.Trailer.GetAsDict(PdfName.INFO)) {
-					FixIncorrectTrailerInfo(pdf);
+				else {
+					pdf.SeparateConjoinedRootAndInfo();
 				}
 				if (options.EnableFullCompression) {
 					pdf.RemoveUnusedObjects();
@@ -213,15 +213,6 @@ namespace PDFPatcher.Processor
 				w.Close();
 			}
 			Tracker.TraceMessage(Tracker.Category.Alert, $"成功提取文件内容到 <<{targetFile}>>。");
-		}
-
-		static void FixIncorrectTrailerInfo(PdfReader pdf) {
-			var d = new PdfDictionary();
-			pdf.Trailer.Put(PdfName.INFO, d);
-			d.Merge(pdf.Catalog);
-			d.Put(PdfName.TYPE, PdfName.INFO);
-			d.Remove(PdfName.PAGES);
-			d.Remove(PdfName.OUTLINES);
 		}
 
 		static string RewriteTargetFileName(string sourceFile, string targetFile, PdfReader pdf) {

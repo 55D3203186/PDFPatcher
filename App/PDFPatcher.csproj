@@ -50,6 +50,9 @@
     <ApplicationManifest>Common\app.manifest</ApplicationManifest>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="CLR">
+      <HintPath>Lib\CLR.dll</HintPath>
+    </Reference>
     <Reference Include="ColorPicker">
       <HintPath>Lib\ColorPicker.dll</HintPath>
     </Reference>
@@ -121,6 +124,7 @@
     <Compile Include="Processor\ContentProcessors\CleanContentStreamProcessor.cs" />
     <Compile Include="Processor\Imaging\FreeImageHelper.cs" />
     <Compile Include="Processor\MuPdf\MuPDFExtensions.cs" />
+    <Compile Include="Processor\OutlineManager.iText.cs" />
     <Compile Include="ShellHelper.cs" />
     <Compile Include="Common\CommandRegistry.cs" />
     <Compile Include="Common\FilePath.cs" />

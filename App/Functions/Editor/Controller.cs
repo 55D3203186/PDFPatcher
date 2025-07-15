@@ -91,13 +91,6 @@ namespace PDFPatcher.Functions.Editor
 			}
 		}
 
-		internal XmlElement PrepareBookmarkDocument() {
-			if (Model.Document == null) {
-				Model.Document = new PdfInfoXmlDocument();
-			}
-			return Model.Document.BookmarkRoot;
-		}
-
 		internal void ClearBookmarks() {
 			Model.Document.BookmarkRoot.RemoveAll();
 			View.Bookmark.ClearObjects();
@@ -275,7 +268,6 @@ namespace PDFPatcher.Functions.Editor
 				ClearBookmarks();
 				InitBookmarkEditor();
 				Model.Document = new PdfInfoXmlDocument();
-				PrepareBookmarkDocument();
 				return;
 			}
 			Model.Document = document;
@@ -295,9 +287,6 @@ namespace PDFPatcher.Functions.Editor
 		}
 
 		void ImportBookmarks(BookmarkEditorView editView, XmlNodeList bookmarks) {
-			if (Model.Document == null) {
-				Model.Document = new PdfInfoXmlDocument();
-			}
 			var d = Model.Document;
 			var g = new UndoActionGroup();
 			var s = editView.GetFirstSelectedModel<BookmarkElement>();
@@ -703,7 +692,7 @@ namespace PDFPatcher.Functions.Editor
 												continue;
 											}
 										}
-										bm = CreateNewSiblingBookmark(bm, spans);
+										bm = NewBookmark(bm, bm, spans);
 										++bl;
 									}
 									else if (bl == style.Level) {
@@ -737,7 +726,7 @@ namespace PDFPatcher.Functions.Editor
 												continue;
 											}
 										}
-										bm = CreateNewSiblingBookmarkForParent(bm, spans);
+										bm = NewBookmark(bm, bm.Parent, spans);
 									}
 									else {
 										while (bl > style.Level) {
@@ -750,7 +739,7 @@ namespace PDFPatcher.Functions.Editor
 												continue;
 											}
 										}
-										bm = CreateNewSiblingBookmarkForParent(bm, spans);
+										bm = NewBookmark(bm, bm.Parent, spans);
 									}
 									var be = bm as BookmarkElement;
 									var s = style.Bookmark;
@@ -790,9 +779,10 @@ namespace PDFPatcher.Functions.Editor
 			View.Bookmark.RebuildAll(false);
 		}
 
-		static BookmarkContainer CreateNewSiblingBookmarkForParent(BookmarkContainer bm, List<MuPDF.TextSpan> spans) {
-			TrimBookmarkText(bm);
-			bm = bm.Parent.AppendBookmark();
+		static BookmarkContainer NewBookmark(BookmarkContainer bm, BookmarkContainer container, List<MuPDF.TextSpan> spans) {
+			if (TrimBookmarkText(bm)) {
+				bm = container.AppendBookmark();
+			}
 			spans.Clear();
 			return bm;
 		}
@@ -812,21 +802,16 @@ namespace PDFPatcher.Functions.Editor
 			return t;
 		}
 
-		static void TrimBookmarkText(BookmarkContainer bm) {
+		static bool TrimBookmarkText(BookmarkContainer bm) {
 			if (bm is BookmarkElement b) {
 				var t = b.Title;
 				var t2 = t.Trim();
 				if (t2 != t) {
 					b.Title = t2;
 				}
+				return t2.Length != 0;
 			}
-		}
-
-		static BookmarkContainer CreateNewSiblingBookmark(BookmarkContainer bm, List<MuPDF.TextSpan> spans) {
-			TrimBookmarkText(bm);
-			bm = bm.AppendBookmark();
-			spans.Clear();
-			return bm;
+			return true;
 		}
 	}
 }
