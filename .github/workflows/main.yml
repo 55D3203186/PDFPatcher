@@ -7,16 +7,14 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
     
-    - uses: microsoft/setup-msbuild@v2
-
-    - run: nuget restore ${{env.SOLUTION_FILE_PATH}}
+    - uses: microsoft/setup-msbuild@v3
 
     - name: build
       run: msbuild /m App\PDFPatcher.csproj /p:Configuration=Release /p:Platform=x86
 
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v7
       with:
           name: PDFPatcher
           path: |
